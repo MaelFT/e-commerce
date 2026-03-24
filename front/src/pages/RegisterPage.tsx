@@ -1,44 +1,54 @@
-import { useState } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AuthLayout from '../components/AuthLayout'
+import type { RegisterCredentials, ValidationErrors } from '../types'
+
+type RegisterField = {
+  name: keyof RegisterCredentials
+  label: string
+  type: string
+  placeholder: string
+}
+
+const fields: RegisterField[] = [
+  { name: 'name',                  label: 'Nom complet',               type: 'text',     placeholder: 'Jean Dupont' },
+  { name: 'email',                 label: 'E-mail',                    type: 'email',    placeholder: 'vous@exemple.com' },
+  { name: 'password',              label: 'Mot de passe',              type: 'password', placeholder: 'Minimum 8 caractères' },
+  { name: 'password_confirmation', label: 'Confirmer le mot de passe', type: 'password', placeholder: '••••••••' },
+]
 
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate     = useNavigate()
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<RegisterCredentials>({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
   })
-  const [errors, setErrors]   = useState({})
-  const [loading, setLoading] = useState(false)
+  const [errors, setErrors]   = useState<ValidationErrors>({})
+  const [loading, setLoading] = useState<boolean>(false)
 
-  const handleChange = (e) =>
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
     setErrors({})
     setLoading(true)
     try {
       await register(form)
       navigate('/')
-    } catch (err) {
-      setErrors(err.errors ?? { name: [err.message ?? 'Une erreur est survenue.'] })
+    } catch (err: unknown) {
+      const apiErr = err as { errors?: ValidationErrors; message?: string }
+      setErrors(apiErr.errors ?? { name: [apiErr.message ?? 'Une erreur est survenue.'] })
     } finally {
       setLoading(false)
     }
   }
-
-  const fields = [
-    { name: 'name',                  label: 'Nom complet',          type: 'text',     placeholder: 'Jean Dupont' },
-    { name: 'email',                 label: 'E-mail',               type: 'email',    placeholder: 'vous@exemple.com' },
-    { name: 'password',              label: 'Mot de passe',         type: 'password', placeholder: 'Minimum 8 caractères' },
-    { name: 'password_confirmation', label: 'Confirmer le mot de passe', type: 'password', placeholder: '••••••••' },
-  ]
 
   return (
     <AuthLayout>
@@ -60,7 +70,7 @@ export default function RegisterPage() {
               onChange={handleChange}
               placeholder={field.placeholder}
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-purple-500 focus:bg-white/8 transition-all"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-purple-500 transition-all"
             />
             {errors[field.name] && (
               <p className="text-red-400 text-xs">{errors[field.name][0]}</p>
@@ -82,19 +92,14 @@ export default function RegisterPage() {
               </svg>
               Création…
             </span>
-          ) : (
-            'Créer mon compte'
-          )}
+          ) : 'Créer mon compte'}
         </button>
       </form>
 
       <div className="mt-6 pt-6 border-t border-white/8">
         <p className="text-center text-sm text-gray-500">
           Déjà un compte ?{' '}
-          <Link
-            to="/login"
-            className="font-semibold text-purple-400 hover:text-purple-300 transition-colors"
-          >
+          <Link to="/login" className="font-semibold text-purple-400 hover:text-purple-300 transition-colors">
             Se connecter
           </Link>
         </p>

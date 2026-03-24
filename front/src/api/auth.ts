@@ -1,6 +1,8 @@
+import type { AuthResponse, LoginCredentials, RegisterCredentials, User } from '../types'
+
 const BASE = '/api/auth'
 
-async function request(url, options = {}) {
+async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token')
 
   const res = await fetch(url, {
@@ -12,7 +14,7 @@ async function request(url, options = {}) {
     ...options,
   })
 
-  const data = await res.json()
+  const data: T = await res.json()
 
   if (!res.ok) throw data
 
@@ -20,15 +22,15 @@ async function request(url, options = {}) {
 }
 
 export const authApi = {
-  register: (body) =>
+  register: (body: RegisterCredentials): Promise<AuthResponse> =>
     request(`${BASE}/register`, { method: 'POST', body: JSON.stringify(body) }),
 
-  login: (body) =>
+  login: (body: LoginCredentials): Promise<AuthResponse> =>
     request(`${BASE}/login`, { method: 'POST', body: JSON.stringify(body) }),
 
-  logout: () =>
+  logout: (): Promise<{ message: string }> =>
     request(`${BASE}/logout`, { method: 'POST' }),
 
-  me: () =>
+  me: (): Promise<User> =>
     request(`${BASE}/me`),
 }
