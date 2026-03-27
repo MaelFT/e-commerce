@@ -1,8 +1,10 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import AuthLayout from '../components/AuthLayout'
+import PublicLayout from '../components/PublicLayout'
 import type { LoginCredentials, ValidationErrors } from '../types'
+import logo from '../assets/cart_black.png'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -32,71 +34,96 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Bon retour</h2>
-        <p className="text-gray-500 text-sm">Connectez-vous à votre espace Amazone</p>
-      </div>
+    <PublicLayout>
+    <div className="flex-grow flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-md bg-white border border-zinc-200 rounded-3xl p-8 sm:p-12 shadow-sm">
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            E-mail
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="vous@exemple.com"
-            required
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-purple-500 transition-all"
-          />
-          {errors.email && <p className="text-red-400 text-xs">{errors.email[0]}</p>}
+        {/* En-tête */}
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex items-center justify-center mb-6">
+            <img src={logo} alt="Amazone" className="w-24 h-24 object-contain" />
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight text-black mb-2">
+            Bon retour
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Entrez vos identifiants pour accéder à votre compte.
+          </p>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Mot de passe
-          </label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            required
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-purple-500 transition-all"
-          />
-          {errors.password && <p className="text-red-400 text-xs">{errors.password[0]}</p>}
-        </div>
+        {/* Formulaire */}
+        <form className="space-y-5" onSubmit={handleSubmit}>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full mt-2 text-white font-semibold py-3 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #0ea5e9)' }}
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              Connexion…
-            </span>
-          ) : 'Se connecter'}
-        </button>
-      </form>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold tracking-wider text-black uppercase">
+              Adresse e-mail
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="vous@exemple.com"
+              required
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-xs">{errors.email[0]}</p>
+            )}
+          </div>
 
-      <div className="mt-6 pt-6 border-t border-white/8">
-        <p className="text-center text-sm text-gray-500">
+          <div className="space-y-2">
+            <div className="flex justify-between items-end">
+              <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                Mot de passe
+              </label>
+            </div>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              required
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-xs">{errors.password[0]}</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-black text-white text-sm font-medium rounded-xl hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center mt-8"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Connexion…
+              </span>
+            ) : (
+              <>
+                Se connecter
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Lien inscription */}
+        <div className="mt-8 text-center text-sm text-zinc-500">
           Pas encore de compte ?{' '}
-          <Link to="/register" className="font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+          <Link to="/register" className="text-black font-medium hover:underline">
             Créer un compte
           </Link>
-        </p>
+        </div>
+
       </div>
-    </AuthLayout>
+    </div>
+    </PublicLayout>
   )
 }

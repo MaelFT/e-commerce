@@ -1,31 +1,28 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import AuthLayout from '../components/AuthLayout'
-import type { RegisterCredentials, ValidationErrors } from '../types'
+import PublicLayout from '../components/PublicLayout'
+import type { ValidationErrors } from '../types'
+import logo from '../assets/cart_black.png'
 
-type RegisterField = {
-  name: keyof RegisterCredentials
-  label: string
-  type: string
-  placeholder: string
+interface RegisterForm {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  password_confirmation: string
 }
-
-const fields: RegisterField[] = [
-  { name: 'name',                  label: 'Nom complet',               type: 'text',     placeholder: 'Jean Dupont' },
-  { name: 'email',                 label: 'E-mail',                    type: 'email',    placeholder: 'vous@exemple.com' },
-  { name: 'password',              label: 'Mot de passe',              type: 'password', placeholder: 'Minimum 8 caractères' },
-  { name: 'password_confirmation', label: 'Confirmer le mot de passe', type: 'password', placeholder: '••••••••' },
-]
 
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate     = useNavigate()
 
-  const [form, setForm] = useState<RegisterCredentials>({
-    name: '',
-    email: '',
-    password: '',
+  const [form, setForm] = useState<RegisterForm>({
+    firstName:             '',
+    lastName:              '',
+    email:                 '',
+    password:              '',
     password_confirmation: '',
   })
   const [errors, setErrors]   = useState<ValidationErrors>({})
@@ -40,70 +37,157 @@ export default function RegisterPage() {
     setErrors({})
     setLoading(true)
     try {
-      await register(form)
-      navigate('/')
+      await register({
+        name:                 `${form.firstName} ${form.lastName}`.trim(),
+        email:                form.email,
+        password:             form.password,
+        password_confirmation: form.password_confirmation,
+      })
+      navigate('/account')
     } catch (err: unknown) {
       const apiErr = err as { errors?: ValidationErrors; message?: string }
-      setErrors(apiErr.errors ?? { name: [apiErr.message ?? 'Une erreur est survenue.'] })
+      setErrors(apiErr.errors ?? { email: [apiErr.message ?? 'Une erreur est survenue.'] })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <AuthLayout>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Créer un compte</h2>
-        <p className="text-gray-500 text-sm">Rejoignez des milliers d'acheteurs sur Amazone</p>
-      </div>
+    <PublicLayout>
+    <div className="flex-grow flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-md bg-white border border-zinc-200 rounded-3xl p-8 sm:p-12 shadow-sm">
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {fields.map((field) => (
-          <div key={field.name} className="space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              {field.label}
+        {/* En-tête */}
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex items-center justify-center mb-6">
+            <img src={logo} alt="Amazone" className="w-24 h-24 object-contain" />
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight text-black mb-2">
+            Créer un compte
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Rejoignez-nous pour gérer vos commandes et votre liste de souhaits.
+          </p>
+        </div>
+
+        {/* Formulaire */}
+        <form className="space-y-5" onSubmit={handleSubmit}>
+
+          {/* Prénom / Nom */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                Prénom
+              </label>
+              <input
+                type="text"
+                name="firstName"
+                value={form.firstName}
+                onChange={handleChange}
+                placeholder="John"
+                required
+                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+              />
+              {errors.name && <p className="text-red-500 text-xs">{errors.name[0]}</p>}
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                Nom
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={form.lastName}
+                onChange={handleChange}
+                placeholder="Doe"
+                required
+                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold tracking-wider text-black uppercase">
+              Adresse e-mail
             </label>
             <input
-              type={field.type}
-              name={field.name}
-              value={form[field.name]}
+              type="email"
+              name="email"
+              value={form.email}
               onChange={handleChange}
-              placeholder={field.placeholder}
+              placeholder="john.doe@example.com"
               required
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-purple-500 transition-all"
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
             />
-            {errors[field.name] && (
-              <p className="text-red-400 text-xs">{errors[field.name][0]}</p>
-            )}
+            {errors.email && <p className="text-red-500 text-xs">{errors.email[0]}</p>}
           </div>
-        ))}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full mt-2 text-white font-semibold py-3 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #0ea5e9)' }}
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              Création…
-            </span>
-          ) : 'Créer mon compte'}
-        </button>
-      </form>
+          {/* Mot de passe */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold tracking-wider text-black uppercase">
+              Mot de passe
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Minimum 8 caractères"
+              required
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+            />
+            {errors.password && <p className="text-red-500 text-xs">{errors.password[0]}</p>}
+          </div>
 
-      <div className="mt-6 pt-6 border-t border-white/8">
-        <p className="text-center text-sm text-gray-500">
+          {/* Confirmation */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold tracking-wider text-black uppercase">
+              Confirmer le mot de passe
+            </label>
+            <input
+              type="password"
+              name="password_confirmation"
+              value={form.password_confirmation}
+              placeholder="Confirmer le mot de passe"
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-black text-white text-sm font-medium rounded-xl hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center mt-8"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Création…
+              </span>
+            ) : (
+              <>
+                S'inscrire
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Lien connexion */}
+        <div className="mt-8 text-center text-sm text-zinc-500">
           Déjà un compte ?{' '}
-          <Link to="/login" className="font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+          <Link to="/login" className="text-black font-medium hover:underline">
             Se connecter
           </Link>
-        </p>
+        </div>
+
       </div>
-    </AuthLayout>
+    </div>
+    </PublicLayout>
   )
 }
