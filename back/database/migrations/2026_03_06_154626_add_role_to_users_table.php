@@ -11,6 +11,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table): void {
             $table->string('role')->default(UserRole::User->value)->after('email');
+            $table->boolean('is_active')->default(true)->after('role');
         });
     }
 
@@ -18,6 +19,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table): void {
             $table->dropColumn('role');
+            $table->dropColumn('is_active');
         });
     }
 };
