@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Search, ShoppingBag, User, Heart, Menu, X, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
 import logo from '../assets/cart_black.png'
 
 const navLinks = [
@@ -16,6 +17,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false)
   const location   = useLocation()
   const { user }   = useAuth()
+  const { itemCount } = useCart()
   const accountHref = user ? '/account' : '/login'
 
   useEffect(() => {
@@ -68,9 +70,11 @@ export default function Header() {
             </Link>
             <Link to="/cart" className="p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all relative">
               <ShoppingBag className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
-                0
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+                  {itemCount > 9 ? '9+' : itemCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>
