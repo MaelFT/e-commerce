@@ -1,19 +1,55 @@
-import { useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { CheckCircle, Package, ArrowRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { CheckCircle, Package, ArrowRight, Loader2 } from 'lucide-react'
 import PublicLayout from '../components/PublicLayout'
 import { useCart } from '../context/CartContext'
+import { checkoutApi } from '../api/checkout'
 
 export default function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams()
   const { clearCart } = useCart()
+  const navigate = useNavigate()
   const sessionId = searchParams.get('session_id')
+  const [confirming, setConfirming] = useState(true)
 
   useEffect(() => {
-    if (sessionId) {
-      clearCart()
+    if (!sessionId) {
+      setConfirming(false)
+      return
     }
-  }, [sessionId, clearCart])
+
+    clearCart()
+
+    let attempt = 0
+    const maxAttempts = 3
+    const delay = 2000
+
+    const tryConfirm = () => {
+      attempt++
+      checkoutApi.confirmSession(sessionId)
+        .then(() => setConfirming(false))
+        .catch(() => {
+          if (attempt < maxAttempts) {
+            setTimeout(tryConfirm, delay)
+          } else {
+            setConfirming(false)
+          }
+        })
+    }
+
+    tryConfirm()
+  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (confirming) {
+    return (
+      <PublicLayout>
+        <div className="flex-grow flex flex-col items-center justify-center py-32 px-4 text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-zinc-400 mb-6" />
+          <p className="text-lg font-medium text-zinc-600">Confirmation de votre commande en cours…</p>
+        </div>
+      </PublicLayout>
+    )
+  }
 
   return (
     <PublicLayout>
@@ -31,7 +67,7 @@ export default function CheckoutSuccessPage() {
 
         <div className="flex flex-col sm:flex-row gap-4">
           <Link
-            to="/account"
+            to="/account?tab=orders"
             className="px-8 py-4 bg-black text-white text-sm font-medium rounded-xl hover:bg-zinc-800 transition-colors flex items-center justify-center"
           >
             <Package className="w-4 h-4 mr-2" />
