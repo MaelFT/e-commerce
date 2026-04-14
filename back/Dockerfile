@@ -26,6 +26,7 @@ RUN docker-php-ext-install \
     intl
 
 RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd intl
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

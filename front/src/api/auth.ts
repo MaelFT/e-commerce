@@ -1,36 +1,21 @@
-import type { AuthResponse, LoginCredentials, RegisterCredentials, User } from '../types'
+import client from './client'
+import type { AuthResponse, LoginCredentials, RegisterCredentials, UpdateProfileCredentials, User } from '../types'
 
-const BASE = '/api/auth'
-
-async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('token')
-
-  const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...options,
-  })
-
-  const data: T = await res.json()
-
-  if (!res.ok) throw data
-
-  return data
-}
+const BASE = '/auth'
 
 export const authApi = {
   register: (body: RegisterCredentials): Promise<AuthResponse> =>
-    request(`${BASE}/register`, { method: 'POST', body: JSON.stringify(body) }),
+    client.post<AuthResponse>(`${BASE}/register`, body).then(r => r.data),
 
   login: (body: LoginCredentials): Promise<AuthResponse> =>
-    request(`${BASE}/login`, { method: 'POST', body: JSON.stringify(body) }),
+    client.post<AuthResponse>(`${BASE}/login`, body).then(r => r.data),
 
   logout: (): Promise<{ message: string }> =>
-    request(`${BASE}/logout`, { method: 'POST' }),
+    client.post<{ message: string }>(`${BASE}/logout`).then(r => r.data),
 
   me: (): Promise<User> =>
-    request(`${BASE}/me`),
+    client.get<User>(`${BASE}/me`).then(r => r.data),
+
+  updateProfile: (body: UpdateProfileCredentials): Promise<User> =>
+    client.patch<User>(`${BASE}/me`, body).then(r => r.data),
 }
