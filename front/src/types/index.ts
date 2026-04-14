@@ -66,3 +66,29 @@ export interface UpdateProfileCredentials {
   password?: string
   password_confirmation?: string
 }
+
+export interface CartItem {
+  product: Product
+  quantity: number
+}
+
+export interface OrderItem {
+  id: number
+  product_id: number
+  product_name: string
+  unit_price: number
+  quantity: number
+}
+
+export interface Order {
+  id: number
+  user_id: number
+  stripe_session_id: string
+  status: string
+  subtotal: number
+  shipping: number
+  total: number
+  items: OrderItem[]
+  created_at: string
+  updated_at: string
+}

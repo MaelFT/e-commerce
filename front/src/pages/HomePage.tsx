@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, ChevronRight, Star } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useProducts } from '../hooks/useProducts'
+import { useCart } from '../context/CartContext'
 import PublicLayout from '../components/PublicLayout'
 
 export default function HomePage() {
   const { products, loading } = useProducts({ per_page: 12 })
+  const { addToCart } = useCart()
 
   const featuredProduct = products[0] ?? null
   const bestSellers     = products.slice(1, 5)
@@ -158,8 +160,11 @@ export default function HomePage() {
                       className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                      <button className="w-full py-3 bg-black/90 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-black transition-colors">
-                        Ajouter
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product) }}
+                        className="w-full py-3 bg-black/90 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-black transition-colors"
+                      >
+                        Ajouter au panier
                       </button>
                     </div>
                   </div>
