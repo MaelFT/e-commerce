@@ -1,9 +1,11 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
-import { Package, Heart, Settings, User as UserIcon, LogOut, ShieldCheck, CheckCircle } from 'lucide-react'
+import { useCart } from '../context/CartContext'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { Package, Heart, Settings, User as UserIcon, LogOut, ShieldCheck, CheckCircle, ChevronRight, Loader2 } from 'lucide-react'
 import PublicLayout from '../components/PublicLayout'
-import type { ValidationErrors } from '../types'
+import { ordersApi } from '../api/orders'
+import type { ValidationErrors, Order } from '../types'
 
 type Tab = 'profile' | 'orders' | 'wishlist' | 'settings'
 
@@ -15,18 +17,22 @@ interface ProfileForm {
   password_confirmation: string
 }
 
-const stats = [
-  { label: 'Commandes',  value: '0', sub: 'Total'     },
-  { label: 'En attente', value: '0', sub: 'À traiter' },
-  { label: 'Livrées',    value: '0', sub: 'Terminées' },
-  { label: 'Panier',     value: '0', sub: 'Articles'  },
-]
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  pending: { label: 'En attente', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  paid:    { label: 'Payée',      color: 'bg-green-50 text-green-700 border-green-200' },
+  failed:  { label: 'Échouée',    color: 'bg-red-50 text-red-700 border-red-200' },
+}
 
 export default function AccountPage() {
   const { user, logout, updateProfile } = useAuth()
+  const { itemCount } = useCart()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  const [activeTab, setActiveTab] = useState<Tab>('profile')
+  const tabFromUrl = searchParams.get('tab') as Tab | null
+  const [activeTab, setActiveTab] = useState<Tab>(tabFromUrl && ['profile', 'orders', 'wishlist', 'settings'].includes(tabFromUrl) ? tabFromUrl : 'profile')
+  const [orders, setOrders] = useState<Order[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
   const [form, setForm] = useState<ProfileForm>({
     name:                  user?.name  ?? '',
     email:                 user?.email ?? '',
@@ -37,6 +43,24 @@ export default function AccountPage() {
   const [errors, setErrors]     = useState<ValidationErrors>({})
   const [loading, setLoading]   = useState<boolean>(false)
   const [success, setSuccess]   = useState<boolean>(false)
+
+  useEffect(() => {
+    setOrdersLoading(true)
+    ordersApi.list()
+      .then(res => setOrders(res.data))
+      .catch(() => {})
+      .finally(() => setOrdersLoading(false))
+  }, [])
+
+  const paidOrders    = orders.filter(o => o.status === 'paid').length
+  const pendingOrders = orders.filter(o => o.status === 'pending').length
+
+  const stats = [
+    { label: 'Commandes',  value: String(orders.length), sub: 'Total'     },
+    { label: 'En attente', value: String(pendingOrders),  sub: 'À traiter' },
+    { label: 'Payées',     value: String(paidOrders),     sub: 'Terminées' },
+    { label: 'Panier',     value: String(itemCount),      sub: 'Articles'  },
+  ]
 
   const handleLogout = async (): Promise<void> => {
     await logout()
@@ -303,7 +327,73 @@ export default function AccountPage() {
                 </>
               )}
 
-              {activeTab !== 'profile' && (
+              {activeTab === 'orders' && (
+                <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+                  <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between">
+                    <h2 className="text-xs font-semibold tracking-wider text-zinc-400 uppercase">Mes commandes</h2>
+                    <span className="text-xs text-zinc-400">{orders.length} commande{orders.length > 1 ? 's' : ''}</span>
+                  </div>
+
+                  {ordersLoading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                      <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mb-4">
+                        <Package className="w-8 h-8 text-zinc-300" />
+                      </div>
+                      <p className="text-base font-semibold text-zinc-700 mb-1">Aucune commande</p>
+                      <p className="text-sm text-zinc-400 mb-6">Vous n'avez pas encore passé de commande.</p>
+                      <Link
+                        to="/products"
+                        className="px-6 py-3 bg-black text-white text-sm font-medium rounded-xl hover:bg-zinc-800 transition-colors"
+                      >
+                        Découvrir nos produits
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-100">
+                      {orders.map(order => {
+                        const statusInfo = STATUS_LABELS[order.status] ?? { label: order.status, color: 'bg-zinc-50 text-zinc-600 border-zinc-200' }
+                        const date = new Date(order.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric', month: 'long', year: 'numeric'
+                        })
+                        return (
+                          <Link
+                            key={order.id}
+                            to={`/orders/${order.id}`}
+                            className="flex items-center gap-4 px-6 py-5 hover:bg-zinc-50 transition-colors group"
+                          >
+                            <div className="w-10 h-10 bg-zinc-100 rounded-xl flex items-center justify-center shrink-0">
+                              <Package className="w-5 h-5 text-zinc-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-1">
+                                <p className="text-sm font-semibold text-black">{order.order_number}</p>
+                                <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-md border ${statusInfo.color}`}>
+                                  {statusInfo.label}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-zinc-400">
+                                <span>{date}</span>
+                                <span>·</span>
+                                <span>{order.items.length} article{order.items.length > 1 ? 's' : ''}</span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-sm font-semibold text-black">{(order.total / 100).toFixed(2)} €</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 transition-colors shrink-0" />
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab !== 'profile' && activeTab !== 'orders' && (
                 <div className="bg-white border border-zinc-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center">
                   <p className="text-zinc-300 text-5xl mb-4">🚧</p>
                   <p className="text-base font-semibold text-zinc-700">Section à venir</p>

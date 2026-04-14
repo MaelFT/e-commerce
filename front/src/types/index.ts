@@ -82,12 +82,17 @@ export interface OrderItem {
 
 export interface Order {
   id: number
+  order_number: string
   user_id: number
   stripe_session_id: string
   status: string
   subtotal: number
   shipping: number
   total: number
+  shipping_address: string | null
+  shipping_city: string | null
+  shipping_postal_code: string | null
+  shipping_country: string | null
   items: OrderItem[]
   created_at: string
   updated_at: string

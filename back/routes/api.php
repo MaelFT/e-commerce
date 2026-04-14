@@ -34,6 +34,7 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/checkout/session', [CheckoutController::class, 'createSession']);
+    Route::post('/checkout/confirm', [CheckoutController::class, 'confirmSession']);
     Route::get('/orders',            [OrderController::class, 'index']);
     Route::get('/orders/{order}',    [OrderController::class, 'show']);
 });
