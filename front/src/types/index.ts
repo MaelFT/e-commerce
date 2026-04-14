@@ -33,3 +33,36 @@ export interface ApiError {
   message: string
   errors?: ValidationErrors
 }
+
+export interface Product {
+  id: number
+  name: string
+  slug: string
+  price: number
+  category: string
+  image: string
+  rating: number
+  reviews_count: number
+  description: string
+  features: string[]
+  is_new: boolean
+  stock: number
+  created_at: string
+  updated_at: string
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+}
+
+export interface UpdateProfileCredentials {
+  name?: string
+  email?: string
+  current_password?: string
+  password?: string
+  password_confirmation?: string
+}
