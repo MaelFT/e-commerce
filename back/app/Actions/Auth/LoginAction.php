@@ -2,6 +2,7 @@
 
 namespace App\Actions\Auth;
 
+use App\Exceptions\AccountDisabledException;
 use App\Exceptions\InvalidCredentialsException;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,8 @@ class LoginAction
             ! $user || ! Hash::check($credentials['password'], $user->password),
             InvalidCredentialsException::class
         );
+
+        throw_if(! $user->is_active, AccountDisabledException::class);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
