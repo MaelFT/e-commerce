@@ -2,12 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
 
-Route::get('/hello', fn () => response()->json([
-    'message' => 'Hello World depuis Laravel 12 !',
-    'status'  => 'ok',
-    'db'      => 'PostgreSQL',
-]));
+Route::get('/products',       [ProductController::class, 'index']);
+Route::get('/products/{product}', [ProductController::class, 'show']);
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +21,8 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me',      [AuthController::class, 'me']);
+        Route::post('/logout',  [AuthController::class, 'logout']);
+        Route::get('/me',       [AuthController::class, 'me']);
+        Route::patch('/me',     [AuthController::class, 'updateProfile']);
     });
 });
