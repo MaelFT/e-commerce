@@ -9,6 +9,7 @@ import AccountPage  from './pages/AccountPage'
 import ProductsPage from './pages/ProductsPage'
 import CartPage     from './pages/CartPage'
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage'
+import OrderDetailPage from './pages/OrderDetailPage'
 
 function App() {
   return (
@@ -22,6 +23,14 @@ function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/cart"     element={<CartPage />} />
             <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+            <Route
+              path="/orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/account"
               element={
