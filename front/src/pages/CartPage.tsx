@@ -2,9 +2,17 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Minus, Plus, Trash2, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react'
 import PublicLayout from '../components/PublicLayout'
+import AddressAutocomplete from '../components/AddressAutocomplete'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { checkoutApi } from '../api/checkout'
+
+interface ShippingForm {
+  shipping_address: string
+  shipping_city: string
+  shipping_postal_code: string
+  shipping_country: string
+}
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal } = useCart()
@@ -12,6 +20,13 @@ export default function CartPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showAddress, setShowAddress] = useState(false)
+  const [addressForm, setAddressForm] = useState<ShippingForm>({
+    shipping_address: '',
+    shipping_city: '',
+    shipping_postal_code: '',
+    shipping_country: 'France',
+  })
 
   const shipping = subtotal > 100 ? 0 : 15
   const total = subtotal + shipping
@@ -22,12 +37,25 @@ export default function CartPage() {
       return
     }
 
+    // Show address form first
+    if (!showAddress) {
+      setShowAddress(true)
+      return
+    }
+
+    // Validate address
+    if (!addressForm.shipping_address.trim() || !addressForm.shipping_city.trim() || !addressForm.shipping_postal_code.trim() || !addressForm.shipping_country.trim()) {
+      setError('Veuillez remplir tous les champs de livraison.')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
       const { url } = await checkoutApi.createSession({
         items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
+        ...addressForm,
       })
       window.location.href = url
     } catch (err: any) {
@@ -163,6 +191,54 @@ export default function CartPage() {
                   </div>
                 )}
 
+                {showAddress && (
+                  <div className="mb-8">
+                    <h3 className="text-base font-bold text-black mb-5">Adresse de livraison</h3>
+                    <div className="space-y-4">
+                      <AddressAutocomplete
+                        onSelect={({ address, city, postalCode, country }) => {
+                          setAddressForm({
+                            shipping_address: address,
+                            shipping_city: city,
+                            shipping_postal_code: postalCode,
+                            shipping_country: country,
+                          })
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Adresse"
+                        value={addressForm.shipping_address}
+                        onChange={e => setAddressForm(prev => ({ ...prev, shipping_address: e.target.value }))}
+                        className="w-full px-4 py-3.5 rounded-xl border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-sm bg-white"
+                      />
+                      <div className="grid grid-cols-3 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Ville"
+                          value={addressForm.shipping_city}
+                          onChange={e => setAddressForm(prev => ({ ...prev, shipping_city: e.target.value }))}
+                          className="w-full px-4 py-3.5 rounded-xl border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-sm bg-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Code postal"
+                          value={addressForm.shipping_postal_code}
+                          onChange={e => setAddressForm(prev => ({ ...prev, shipping_postal_code: e.target.value }))}
+                          className="w-full px-4 py-3.5 rounded-xl border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-sm bg-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Pays"
+                          value={addressForm.shipping_country}
+                          onChange={e => setAddressForm(prev => ({ ...prev, shipping_country: e.target.value }))}
+                          className="w-full px-4 py-3.5 rounded-xl border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-sm bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={handleCheckout}
                   disabled={loading}
@@ -170,6 +246,8 @@ export default function CartPage() {
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : showAddress ? (
+                    <>Confirmer et payer <ArrowRight className="w-4 h-4 ml-2" /></>
                   ) : (
                     <>Procéder au paiement <ArrowRight className="w-4 h-4 ml-2" /></>
                   )}
