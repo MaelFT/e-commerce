@@ -10,24 +10,38 @@ const CATEGORIES = ['Tous', 'Audio', 'Ordinateurs', 'Accessoires', 'Smartphones'
 const MAX_PRICE   = 2500
 
 export default function ProductsPage() {
-  const [searchParams] = useSearchParams()
-  const categoryParam   = searchParams.get('category')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const categoryParam = searchParams.get('category') ?? ''
+  const searchParam   = searchParams.get('search')   ?? ''
 
-  const [isFilterOpen,  setIsFilterOpen]  = useState(false)
-  const [sortBy,        setSortBy]        = useState<SortKey>('featured')
-  const [activeCategory, setActiveCategory] = useState(
-    categoryParam
-      ? CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase()) ?? 'Tous'
-      : 'Tous'
-  )
-  const [maxPrice,  setMaxPrice]  = useState(MAX_PRICE)
-  const [minRating, setMinRating] = useState(0)
+  // Catégorie active dérivée de l'URL — plus d'état local
+  const activeCategory = CATEGORIES.find(
+    c => c.toLowerCase() === categoryParam.toLowerCase()
+  ) ?? 'Tous'
 
-  const { products, loading } = useProducts({ per_page: 100 })
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [sortBy,       setSortBy]       = useState<SortKey>('featured')
+  const [maxPrice,     setMaxPrice]     = useState(MAX_PRICE)
+  const [minRating,    setMinRating]    = useState(0)
+
+  const handleCategoryChange = (cat: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.delete('search')
+      if (cat === 'Tous') next.delete('category')
+      else                next.set('category', cat)
+      return next
+    })
+  }
+
+  const { products, loading } = useProducts({
+    per_page: 100,
+    search:   searchParam   || undefined,
+    category: activeCategory !== 'Tous' ? activeCategory : undefined,
+  })
 
   const filtered = useMemo(() => {
     return products
-      .filter(p => activeCategory === 'Tous' || p.category === activeCategory)
       .filter(p => p.price <= maxPrice)
       .filter(p => p.rating >= minRating)
       .sort((a, b) => {
@@ -37,15 +51,15 @@ export default function ProductsPage() {
         if (sortBy === 'newest')     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         return 0
       })
-  }, [products, activeCategory, maxPrice, minRating, sortBy])
+  }, [products, maxPrice, minRating, sortBy])
 
   const resetFilters = () => {
-    setActiveCategory('Tous')
+    setSearchParams({})
     setMaxPrice(MAX_PRICE)
     setMinRating(0)
   }
 
-  const hasActiveFilters = activeCategory !== 'Tous' || maxPrice < MAX_PRICE || minRating > 0
+  const hasActiveFilters = !!searchParam || activeCategory !== 'Tous' || maxPrice < MAX_PRICE || minRating > 0
 
   return (
     <PublicLayout>
@@ -60,11 +74,15 @@ export default function ProductsPage() {
                   <Link to="/" className="hover:text-black transition-colors">Accueil</Link>
                   <span>/</span>
                   <span className="text-black capitalize">
-                    {activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
+                    {searchParam
+                      ? `Recherche : "${searchParam}"`
+                      : activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
                   </span>
                 </nav>
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
-                  {activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
+                  {searchParam
+                    ? `Résultats pour "${searchParam}"`
+                    : activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
                 </h1>
               </div>
 
@@ -124,7 +142,7 @@ export default function ProductsPage() {
                     {CATEGORIES.map((cat) => (
                       <li key={cat}>
                         <button
-                          onClick={() => setActiveCategory(cat)}
+                          onClick={() => handleCategoryChange(cat)}
                           className={`text-sm w-full text-left flex items-center justify-between py-1 transition-colors ${
                             activeCategory === cat ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'
                           }`}
