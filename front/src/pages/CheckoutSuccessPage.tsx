@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Package, ArrowRight, Loader2 } from 'lucide-react'
 import PublicLayout from '../components/PublicLayout'
 import { useCart } from '../context/CartContext'
@@ -8,7 +8,6 @@ import { checkoutApi } from '../api/checkout'
 export default function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams()
   const { clearCart } = useCart()
-  const navigate = useNavigate()
   const sessionId = searchParams.get('session_id')
   const [confirming, setConfirming] = useState(true)
 

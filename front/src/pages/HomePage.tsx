@@ -1,22 +1,25 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ChevronRight, Star } from 'lucide-react'
+import { ArrowRight, ChevronRight, Heart, Star } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useProducts } from '../hooks/useProducts'
 import { useCart } from '../context/CartContext'
 import PublicLayout from '../components/PublicLayout'
+import { useWishlist } from '../context/WishlistContext'
 
 export default function HomePage() {
   const { products, loading } = useProducts({ per_page: 12 })
   const { addToCart } = useCart()
+  const { has, toggle } = useWishlist()
 
-  const featuredProduct = products[0] ?? null
-  const bestSellers     = products.slice(1, 5)
-  const bgProduct       = products[5] ?? null
+  const safeProducts = products ?? []
+  const featuredProduct = safeProducts[0] ?? null
+  const bestSellers     = safeProducts.slice(1, 5)
+  const bgProduct       = safeProducts[5] ?? null
 
   const categories = [
-    { name: 'Audio',       image: products.find(p => p.category === 'Audio')?.image       ?? '', span: 'md:col-span-1' },
-    { name: 'Ordinateurs', image: products.find(p => p.category === 'Ordinateurs')?.image ?? '', span: 'md:col-span-2 md:row-span-2' },
-    { name: 'Accessoires', image: products.find(p => p.category === 'Accessoires')?.image ?? '', span: 'md:col-span-1' },
+    { name: 'Audio',       image: safeProducts.find(p => p.category === 'Audio')?.image       ?? '', span: 'md:col-span-1' },
+    { name: 'Ordinateurs', image: safeProducts.find(p => p.category === 'Ordinateurs')?.image ?? '', span: 'md:col-span-2 md:row-span-2' },
+    { name: 'Accessoires', image: safeProducts.find(p => p.category === 'Accessoires')?.image ?? '', span: 'md:col-span-1' },
   ]
 
   if (loading) {
@@ -154,6 +157,14 @@ export default function HomePage() {
                         Nouveau
                       </div>
                     )}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id) }}
+                      className="absolute top-4 right-4 z-10 w-9 h-9 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-zinc-700 hover:text-black hover:bg-white transition-colors shadow-sm"
+                      aria-label={has(product.id) ? 'Retirer des likes' : 'Ajouter aux likes'}
+                      title={has(product.id) ? 'Retirer des likes' : 'Ajouter aux likes'}
+                    >
+                      <Heart className={has(product.id) ? 'w-4 h-4 fill-black text-black' : 'w-4 h-4'} />
+                    </button>
                     <img
                       src={product.image}
                       alt={product.name}
