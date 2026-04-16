@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronDown, Filter, Star, SlidersHorizontal, Check, Search, X, ShoppingBag } from 'lucide-react'
+import { ChevronDown, Filter, Star, SlidersHorizontal, Check, Search, X, ShoppingBag, Heart } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
 import { useCart } from '../context/CartContext'
 import PublicLayout from '../components/PublicLayout'
+import { useWishlist } from '../context/WishlistContext'
 
 type SortKey = 'featured' | 'newest' | 'price-low' | 'price-high' | 'rating'
 
@@ -26,6 +27,7 @@ export default function ProductsPage() {
 
   const { products, loading } = useProducts({ per_page: 100 })
   const { addToCart } = useCart()
+  const { has, toggle } = useWishlist()
 
   const filtered = useMemo(() => {
     return products
@@ -276,6 +278,14 @@ export default function ProductsPage() {
                             Nouveau
                           </div>
                         )}
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id) }}
+                          className="absolute top-4 right-4 z-10 w-9 h-9 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-zinc-700 hover:text-black hover:bg-white transition-colors shadow-sm"
+                          aria-label={has(product.id) ? 'Retirer des likes' : 'Ajouter aux likes'}
+                          title={has(product.id) ? 'Retirer des likes' : 'Ajouter aux likes'}
+                        >
+                          <Heart className={has(product.id) ? 'w-4 h-4 fill-black text-black' : 'w-4 h-4'} />
+                        </button>
                         <img
                           src={product.image}
                           alt={product.name}
