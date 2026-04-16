@@ -2,12 +2,12 @@ import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
-import { Package, Heart, Settings, User as UserIcon, LogOut, ShieldCheck, CheckCircle, ChevronRight, Loader2 } from 'lucide-react'
+import { Package, Settings, User as UserIcon, LogOut, ShieldCheck, CheckCircle, ChevronRight, Loader2 } from 'lucide-react'
 import PublicLayout from '../components/PublicLayout'
 import { ordersApi } from '../api/orders'
 import type { ValidationErrors, Order } from '../types'
 
-type Tab = 'profile' | 'orders' | 'wishlist' | 'settings'
+type Tab = 'profile' | 'orders' | 'settings'
 
 interface ProfileForm {
   name: string
@@ -30,7 +30,7 @@ export default function AccountPage() {
   const [searchParams] = useSearchParams()
 
   const tabFromUrl = searchParams.get('tab') as Tab | null
-  const [activeTab, setActiveTab] = useState<Tab>(tabFromUrl && ['profile', 'orders', 'wishlist', 'settings'].includes(tabFromUrl) ? tabFromUrl : 'profile')
+  const [activeTab, setActiveTab] = useState<Tab>(tabFromUrl && ['profile', 'orders', 'settings'].includes(tabFromUrl) ? tabFromUrl : 'profile')
   const [orders, setOrders] = useState<Order[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [form, setForm] = useState<ProfileForm>({
@@ -109,7 +109,6 @@ export default function AccountPage() {
   const navItems: { id: Tab; icon: typeof UserIcon; label: string }[] = [
     { id: 'profile',  icon: UserIcon, label: 'Mon compte'    },
     { id: 'orders',   icon: Package,  label: 'Mes commandes' },
-    { id: 'wishlist', icon: Heart,    label: 'Favoris'       },
     { id: 'settings', icon: Settings, label: 'Paramètres'    },
   ]
 
@@ -390,14 +389,6 @@ export default function AccountPage() {
                       })}
                     </div>
                   )}
-                </div>
-              )}
-
-              {activeTab !== 'profile' && activeTab !== 'orders' && (
-                <div className="bg-white border border-zinc-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center">
-                  <p className="text-zinc-300 text-5xl mb-4">🚧</p>
-                  <p className="text-base font-semibold text-zinc-700">Section à venir</p>
-                  <p className="text-sm text-zinc-400 mt-1">Cette fonctionnalité sera disponible prochainement.</p>
                 </div>
               )}
 
