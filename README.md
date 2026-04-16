@@ -3,7 +3,7 @@
 ## Prérequis
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installé et **démarré**
-- [Node.js](https://nodejs.org/) (v18+)
+- (Optionnel) [Node.js](https://nodejs.org/) (v18+) si tu veux lancer le frontend hors Docker
 
 ---
 
@@ -16,25 +16,14 @@ cd e-commerce
 
 ---
 
-## 2. Configurer le backend
+## 2. Configurer le backend (optionnel)
 
-Copier le fichier d'environnement et l'adapter :
+Le `docker-compose.yml` s'occupe de créer `.env` dans le conteneur si besoin.
+
+Si tu veux un `.env` local :
 
 ```bash
 cp back/.env.example back/.env
-```
-
-Modifier `back/.env` pour utiliser PostgreSQL (correspondant au docker-compose) :
-
-```env
-APP_KEY=                        # sera généré à l'étape suivante
-
-DB_CONNECTION=pgsql
-DB_HOST=postgres
-DB_PORT=5432
-DB_DATABASE=ecommerce
-DB_USERNAME=postgres
-DB_PASSWORD=password
 ```
 
 ---
@@ -42,13 +31,14 @@ DB_PASSWORD=password
 ## 3. Lancer les conteneurs Docker
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 Cela démarre :
 - `ecommerce-app` — Laravel / PHP-FPM (port interne 9000)
 - `ecommerce-nginx` — Nginx accessible sur **http://localhost:8000**
-- `ecommerce-postgres` — PostgreSQL accessible sur `localhost:5433`
+- `ecommerce-postgres` — PostgreSQL accessible sur `localhost:5434`
+- `ecommerce-front` — Frontend Vite accessible sur **http://localhost:5173**
 
 ---
 
@@ -56,34 +46,28 @@ Cela démarre :
 
 ```bash
 # Générer la clé applicative
-docker exec ecommerce-app php artisan key:generate
+docker exec ecommerce-app php artisan key:generate --force
 
 # Lancer les migrations + seeders
-docker exec ecommerce-app php artisan migrate --seed
+docker exec ecommerce-app php artisan migrate --seed --force
 ```
 
 ---
 
-## 5. Lancer le frontend
+## 5. Frontend
 
-```bash
-cd front
-npm install
-npm run dev
-```
+Le frontend est accessible sur **http://localhost:5173**.
 
-Le frontend est accessible sur **http://localhost:5173**
-
-> Les appels `/api` sont automatiquement proxifiés vers `http://localhost:8000`.
+> Les appels `/api` sont automatiquement proxifiés vers l'API.
 
 ---
 
 ## Comptes de test
 
-| Rôle  | Email              | Mot de passe  |
-|-------|--------------------|---------------|
-| Admin | admin@amazone.fr   | password123   |
-| User  | test@test.fr       | password123   |
+| Rôle  | Email              | Mot de passe |
+|-------|--------------------|--------------|
+| Admin | admin@amazone.fr   | admin1234    |
+| User  | test@example.com   | password     |
 
 Accès au panneau d'administration : **http://localhost:8000/admin**
 
@@ -99,5 +83,17 @@ docker compose down
 docker compose logs -f
 
 # Relancer les migrations depuis zéro
-docker exec ecommerce-app php artisan migrate:fresh --seed
+docker exec ecommerce-app php artisan migrate:fresh --seed --force
 ```
+
+---
+
+## (Optionnel) Lancer le front hors Docker
+
+```bash
+cd front
+npm install
+npm run dev
+```
+
+Le proxy `/api` du front pointe vers `http://localhost:8000`.
