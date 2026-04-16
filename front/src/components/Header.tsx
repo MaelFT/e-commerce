@@ -4,7 +4,7 @@ import { Search, ShoppingBag, User, Heart, Menu, X, ArrowRight } from 'lucide-re
 import { motion, AnimatePresence } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
-import logo from '../assets/cart_black.png'
+import { useWishlist } from '../context/WishlistContext'
 
 const navLinks = [
   { to: '/products',                    label: 'Boutique' },
@@ -18,6 +18,7 @@ export default function Header() {
   const location   = useLocation()
   const { user }   = useAuth()
   const { itemCount } = useCart()
+  const { count: wishlistCount } = useWishlist()
   const accountHref = user ? '/account' : '/login'
 
   useEffect(() => {
@@ -41,7 +42,9 @@ export default function Header() {
 
           {/* Logo */}
           <Link to="/" className="text-xl font-bold tracking-tight shrink-0 flex items-center gap-2">
-            <img src={logo} alt="Amazone" className="w-11 h-11 object-contain translate-y-1" />
+            <div className="w-11 h-11 rounded-2xl bg-black text-white grid place-items-center font-black tracking-tight">
+              A
+            </div>
             Amazone
           </Link>
 
@@ -65,8 +68,13 @@ export default function Header() {
             <Link to={accountHref} className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all">
               <User className="w-5 h-5" />
             </Link>
-            <Link to="/wishlist" className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all">
+            <Link to="/wishlist" className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all relative">
               <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
             </Link>
             <Link to="/cart" className="p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all relative">
               <ShoppingBag className="w-5 h-5" />
@@ -104,7 +112,9 @@ export default function Header() {
                   className="text-xl font-bold tracking-tight flex items-center gap-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <img src={logo} alt="Amazone" className="w-9 h-9 object-contain translate-y-0.5" />
+                  <div className="w-9 h-9 rounded-xl bg-black text-white grid place-items-center font-black tracking-tight">
+                    A
+                  </div>
                   Amazone
                 </Link>
                 <button
