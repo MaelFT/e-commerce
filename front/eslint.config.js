@@ -19,5 +19,17 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Trop strict pour ce projet: beaucoup d'effets légitimes mettent à jour du state.
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  // Les fichiers de context/hooks exportent aussi des helpers (useXxx), ce qui déclenche
+  // à tort la règle Fast Refresh.
+  {
+    files: ['src/context/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])
