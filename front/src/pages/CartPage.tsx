@@ -58,8 +58,12 @@ export default function CartPage() {
         ...addressForm,
       })
       window.location.href = url
-    } catch (err: any) {
-      setError(err?.message || 'Une erreur est survenue lors du paiement.')
+    } catch (err: unknown) {
+      const maybeMessage = (err as { message?: unknown } | null | undefined)?.message
+      setError(typeof maybeMessage === 'string' && maybeMessage.trim().length > 0
+        ? maybeMessage
+        : 'Une erreur est survenue lors du paiement.'
+      )
       setLoading(false)
     }
   }

@@ -19,12 +19,17 @@ export function useProducts(filters: ProductFilters = {}): UseProductsReturn {
     setLoading(true)
     setError(null)
 
+    const stableFilters = JSON.parse(key) as ProductFilters
+
     productsApi
-      .list(filters)
+      .list(stableFilters)
       .then((res) => {
-        const maybeData = (res as any)?.data
+        // Laravel pagination shape: { data: Product[], ... }
+        // If the API/proxy returns an unexpected payload, avoid crashing the UI.
+        const maybeData: unknown = (res as { data?: unknown } | null | undefined)?.data
+
         if (Array.isArray(maybeData)) {
-          setProducts(maybeData)
+          setProducts(maybeData as Product[])
           return
         }
         setProducts([])

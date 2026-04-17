@@ -14,6 +14,8 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   failed:  { label: 'Échouée',     color: 'bg-red-50 text-red-700 border-red-200' },
 }
 
+type JsPdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY?: number } }
+
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
@@ -79,7 +81,7 @@ export default function OrderDetailPage() {
   const handleDownloadPdf = () => {
     if (!order) return
 
-    const doc = new jsPDF()
+    const doc = new jsPDF() as JsPdfWithAutoTable
     const date = new Date(order.created_at)
     const fDate = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     const invNum = `FAC-${order.order_number.replace('CMD-', '')}`
@@ -173,7 +175,7 @@ export default function OrderDetailPage() {
     })
 
     // Totals
-    const finalY = (doc as any).lastAutoTable.finalY + 10
+    const finalY = (doc.lastAutoTable?.finalY ?? tableY) + 10
     const totalsX = 130
     const valX = 190
 

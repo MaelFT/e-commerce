@@ -16,6 +16,20 @@ interface Props {
   initialAddress?: string
 }
 
+type AddressApiResponse = {
+  features?: Array<{
+    properties?: {
+      label?: unknown
+      housenumber?: unknown
+      street?: unknown
+      name?: unknown
+      postcode?: unknown
+      city?: unknown
+      context?: unknown
+    }
+  }>
+}
+
 export default function AddressAutocomplete({ onSelect, initialAddress }: Props) {
   const [query, setQuery] = useState(initialAddress ?? '')
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
@@ -31,16 +45,22 @@ export default function AddressAutocomplete({ onSelect, initialAddress }: Props)
     }
     try {
       const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`)
-      const data = await res.json()
-      const results: AddressSuggestion[] = data.features.map((f: any) => ({
-        label: f.properties.label,
-        housenumber: f.properties.housenumber,
-        street: f.properties.street,
-        name: f.properties.name,
-        postcode: f.properties.postcode,
-        city: f.properties.city,
-        context: f.properties.context,
-      }))
+      const data = (await res.json()) as AddressApiResponse
+      const features = Array.isArray(data.features) ? data.features : []
+      const results: AddressSuggestion[] = features
+        .map((f) => {
+          const p = f?.properties ?? {}
+          const label = typeof p.label === 'string' ? p.label : ''
+          const name = typeof p.name === 'string' ? p.name : label
+          const postcode = typeof p.postcode === 'string' ? p.postcode : ''
+          const city = typeof p.city === 'string' ? p.city : ''
+          const context = typeof p.context === 'string' ? p.context : ''
+          const housenumber = typeof p.housenumber === 'string' ? p.housenumber : undefined
+          const street = typeof p.street === 'string' ? p.street : undefined
+
+          return { label, housenumber, street, name, postcode, city, context }
+        })
+        .filter((x) => x.label.length > 0 && x.name.length > 0 && x.postcode.length > 0 && x.city.length > 0)
       setSuggestions(results)
       setShowSuggestions(true)
       setHighlightIndex(-1)
