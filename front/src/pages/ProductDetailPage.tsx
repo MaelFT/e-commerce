@@ -4,6 +4,8 @@ import { Star, Truck, Shield, RotateCcw, Heart, Share2, Plus, Minus, ArrowRight 
 import { motion } from 'motion/react'
 import { useProduct } from '../hooks/useProduct'
 import { useProducts } from '../hooks/useProducts'
+import { useCart } from '../context/CartContext'
+import { useWishlist } from '../context/WishlistContext'
 import PublicLayout from '../components/PublicLayout'
 
 export default function ProductDetailPage() {
@@ -19,9 +21,14 @@ export default function ProductDetailPage() {
     ? allProducts.filter(p => p.id !== product.id).slice(0, 4)
     : []
 
+  const { addToCart }            = useCart()
+  const { has, toggle }          = useWishlist()
+
   const [quantity,    setQuantity]    = useState(1)
   const [activeImage, setActiveImage] = useState(0)
   const [isScrolled,  setIsScrolled]  = useState(false)
+
+  const isLiked = product ? has(product.id) : false
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 400)
@@ -82,7 +89,11 @@ export default function ProductDetailPage() {
                 <p className="text-xs text-zinc-500">{product.price} €</p>
               </div>
             </div>
-            <button className="px-6 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+            <button
+              onClick={() => addToCart(product, quantity)}
+              disabled={product.stock === 0}
+              className="px-6 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Ajouter au panier
             </button>
           </div>
@@ -116,8 +127,16 @@ export default function ProductDetailPage() {
                   alt={product.name}
                   className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                 />
-                <button className="absolute top-6 right-6 p-3 bg-white/80 backdrop-blur-md text-black rounded-full hover:bg-black hover:text-white transition-colors">
-                  <Heart className="w-5 h-5" />
+                <button
+                  onClick={() => toggle(product.id)}
+                  aria-label={isLiked ? 'Retirer des likes' : 'Ajouter aux likes'}
+                  className={`absolute top-6 right-6 p-3 backdrop-blur-md rounded-full transition-colors ${
+                    isLiked
+                      ? 'bg-black text-white hover:bg-zinc-800'
+                      : 'bg-white/80 text-black hover:bg-black hover:text-white'
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
                 </button>
               </div>
 
@@ -207,6 +226,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 <button
+                  onClick={() => addToCart(product, quantity)}
                   disabled={product.stock === 0}
                   className="flex-1 h-14 bg-black text-white text-base font-medium rounded-xl hover:bg-zinc-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
