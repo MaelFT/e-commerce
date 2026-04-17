@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Search, ShoppingBag, User, Heart, Menu, X, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
+import { useWishlist } from '../context/WishlistContext'
 import logo from '../assets/cart_black.png'
 
 const navLinks = [
@@ -20,6 +22,8 @@ export default function Header() {
   const location    = useLocation()
   const navigate    = useNavigate()
   const { user }    = useAuth()
+  const { itemCount }            = useCart()
+  const { count: wishlistCount } = useWishlist()
   const accountHref = user ? '/account' : '/login'
 
   useEffect(() => {
@@ -96,14 +100,21 @@ export default function Header() {
             <Link to={accountHref} className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all">
               <User className="w-5 h-5" />
             </Link>
-            <Link to="/wishlist" className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all">
+            <Link to="/wishlist" className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all relative">
               <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
             </Link>
             <Link to="/cart" className="p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all relative">
               <ShoppingBag className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
-                0
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+                  {itemCount > 9 ? '9+' : itemCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>

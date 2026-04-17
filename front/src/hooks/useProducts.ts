@@ -21,8 +21,19 @@ export function useProducts(filters: ProductFilters = {}): UseProductsReturn {
 
     productsApi
       .list(filters)
-      .then((res) => setProducts(res.data))
-      .catch(() => setError('Impossible de charger les produits.'))
+      .then((res) => {
+        const maybeData = (res as any)?.data
+        if (Array.isArray(maybeData)) {
+          setProducts(maybeData)
+          return
+        }
+        setProducts([])
+        setError('Réponse API invalide lors du chargement des produits.')
+      })
+      .catch(() => {
+        setProducts([])
+        setError('Impossible de charger les produits.')
+      })
       .finally(() => setLoading(false))
   }, [key])
 
