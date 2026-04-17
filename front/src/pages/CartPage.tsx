@@ -6,6 +6,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { checkoutApi } from '../api/checkout'
+import { addressFromUser, isAddressEmpty } from '../hooks/useAddress'
 
 interface ShippingForm {
   shipping_address: string
@@ -17,15 +18,17 @@ interface ShippingForm {
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal } = useCart()
   const { user } = useAuth()
+  const savedAddress  = addressFromUser(user ?? null)
+  const addressIsEmpty = isAddressEmpty(savedAddress)
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showAddress, setShowAddress] = useState(false)
   const [addressForm, setAddressForm] = useState<ShippingForm>({
-    shipping_address: '',
-    shipping_city: '',
-    shipping_postal_code: '',
-    shipping_country: 'France',
+    shipping_address:     addressIsEmpty ? '' : savedAddress.address,
+    shipping_city:        addressIsEmpty ? '' : savedAddress.city,
+    shipping_postal_code: addressIsEmpty ? '' : savedAddress.postal_code,
+    shipping_country:     addressIsEmpty ? 'France' : savedAddress.country,
   })
 
   const shipping = subtotal > 100 ? 0 : 15
@@ -197,7 +200,14 @@ export default function CartPage() {
 
                 {showAddress && (
                   <div className="mb-8">
-                    <h3 className="text-base font-bold text-black mb-5">Adresse de livraison</h3>
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-base font-bold text-black">Adresse de livraison</h3>
+                      {!addressIsEmpty && (
+                        <span className="text-[11px] font-medium text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-full">
+                          Pré-remplie depuis votre compte
+                        </span>
+                      )}
+                    </div>
                     <div className="space-y-4">
                       <AddressAutocomplete
                         onSelect={({ address, city, postalCode, country }) => {
