@@ -69,16 +69,21 @@ export default function ContactPage() {
       await contactApi.send(form)
       setSuccess(true)
       setForm({ name: '', email: '', subject: SUBJECTS[0], message: '' })
-    } catch (err: any) {
-      const data = err?.response?.data
-      if (data?.errors) {
+    } catch (err: unknown) {
+      const maybeResponseData: unknown = (err as { response?: { data?: unknown } } | null | undefined)?.response?.data
+      const data = (maybeResponseData && typeof maybeResponseData === 'object')
+        ? (maybeResponseData as { message?: unknown; errors?: unknown })
+        : {}
+
+      if (data.errors && typeof data.errors === 'object') {
         const mapped: Partial<Form> = {}
-        for (const [k, v] of Object.entries(data.errors)) {
-          mapped[k as keyof Form] = (v as string[])[0]
+        for (const [k, v] of Object.entries(data.errors as Record<string, unknown>)) {
+          const first = Array.isArray(v) ? v[0] : undefined
+          mapped[k as keyof Form] = typeof first === 'string' ? first : 'Champ invalide.'
         }
         setFieldErrors(mapped)
       } else {
-        setError(data?.message ?? 'Une erreur est survenue. Veuillez réessayer.')
+        setError(typeof data.message === 'string' ? data.message : 'Une erreur est survenue. Veuillez réessayer.')
       }
     } finally {
       setLoading(false)

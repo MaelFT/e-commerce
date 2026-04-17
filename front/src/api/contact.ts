@@ -1,4 +1,4 @@
-import axios from 'axios'
+import client from './client'
 
 export interface ContactPayload {
   name: string
@@ -8,6 +8,7 @@ export interface ContactPayload {
 }
 
 export const contactApi = {
-  send: (data: ContactPayload) =>
-    axios.post<{ message: string }>('/api/contact', data).then(r => r.data),
+  send: (body: ContactPayload): Promise<{ message: string }> =>
+    client.post<{ message: string }>(`/contact`, body).then(r => r.data),
 }
+
