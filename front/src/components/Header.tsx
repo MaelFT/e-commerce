@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Search, ShoppingBag, User, Heart, Menu, X, ArrowRight } from 'lucide-react'
+import { Search, ShoppingBag, User, Heart, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
@@ -94,9 +94,7 @@ export default function Header() {
             >
               <Search className="w-5 h-5" />
             </button>
-            <Link to="/compare" className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all" title="Comparer">
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+
             <Link to={accountHref} className="hidden sm:flex p-2 hover:text-black hover:bg-zinc-100 rounded-full transition-all">
               <User className="w-5 h-5" />
             </Link>
