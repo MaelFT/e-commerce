@@ -6,7 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 
-Route::get('/products',       [ProductController::class, 'index']);
+Route::get('/products',           [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
 
 // Stripe webhook (no auth — verified via signature)

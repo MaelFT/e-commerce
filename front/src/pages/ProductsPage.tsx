@@ -1,10 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronDown, Filter, Star, SlidersHorizontal, Check, Search, X, ShoppingBag, Heart } from 'lucide-react'
+import { ChevronDown, Filter, Star, SlidersHorizontal, Check, Search, X } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
-import { useCart } from '../context/CartContext'
 import PublicLayout from '../components/PublicLayout'
-import { useWishlist } from '../context/WishlistContext'
 
 type SortKey = 'featured' | 'newest' | 'price-low' | 'price-high' | 'rating'
 
@@ -12,26 +10,38 @@ const CATEGORIES = ['Tous', 'Audio', 'Ordinateurs', 'Accessoires', 'Smartphones'
 const MAX_PRICE   = 2500
 
 export default function ProductsPage() {
-  const [searchParams] = useSearchParams()
-  const categoryParam   = searchParams.get('category')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const categoryParam = searchParams.get('category') ?? ''
+  const searchParam   = searchParams.get('search')   ?? ''
 
-  const [isFilterOpen,  setIsFilterOpen]  = useState(false)
-  const [sortBy,        setSortBy]        = useState<SortKey>('featured')
-  const [activeCategory, setActiveCategory] = useState(
-    categoryParam
-      ? CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase()) ?? 'Tous'
-      : 'Tous'
-  )
-  const [maxPrice,  setMaxPrice]  = useState(MAX_PRICE)
-  const [minRating, setMinRating] = useState(0)
+  // Catégorie active dérivée de l'URL — plus d'état local
+  const activeCategory = CATEGORIES.find(
+    c => c.toLowerCase() === categoryParam.toLowerCase()
+  ) ?? 'Tous'
 
-  const { products, loading } = useProducts({ per_page: 100 })
-  const { addToCart } = useCart()
-  const { has, toggle } = useWishlist()
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [sortBy,       setSortBy]       = useState<SortKey>('featured')
+  const [maxPrice,     setMaxPrice]     = useState(MAX_PRICE)
+  const [minRating,    setMinRating]    = useState(0)
+
+  const handleCategoryChange = (cat: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.delete('search')
+      if (cat === 'Tous') next.delete('category')
+      else                next.set('category', cat)
+      return next
+    })
+  }
+
+  const { products, loading } = useProducts({
+    per_page: 100,
+    search:   searchParam   || undefined,
+    category: activeCategory !== 'Tous' ? activeCategory : undefined,
+  })
 
   const filtered = useMemo(() => {
     return products
-      .filter(p => activeCategory === 'Tous' || p.category === activeCategory)
       .filter(p => p.price <= maxPrice)
       .filter(p => p.rating >= minRating)
       .sort((a, b) => {
@@ -41,15 +51,15 @@ export default function ProductsPage() {
         if (sortBy === 'newest')     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         return 0
       })
-  }, [products, activeCategory, maxPrice, minRating, sortBy])
+  }, [products, maxPrice, minRating, sortBy])
 
   const resetFilters = () => {
-    setActiveCategory('Tous')
+    setSearchParams({})
     setMaxPrice(MAX_PRICE)
     setMinRating(0)
   }
 
-  const hasActiveFilters = activeCategory !== 'Tous' || maxPrice < MAX_PRICE || minRating > 0
+  const hasActiveFilters = !!searchParam || activeCategory !== 'Tous' || maxPrice < MAX_PRICE || minRating > 0
 
   return (
     <PublicLayout>
@@ -64,11 +74,15 @@ export default function ProductsPage() {
                   <Link to="/" className="hover:text-black transition-colors">Accueil</Link>
                   <span>/</span>
                   <span className="text-black capitalize">
-                    {activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
+                    {searchParam
+                      ? `Recherche : "${searchParam}"`
+                      : activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
                   </span>
                 </nav>
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-black">
-                  {activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
+                  {searchParam
+                    ? `Résultats pour "${searchParam}"`
+                    : activeCategory === 'Tous' ? 'Tous les produits' : activeCategory}
                 </h1>
               </div>
 
@@ -128,7 +142,7 @@ export default function ProductsPage() {
                     {CATEGORIES.map((cat) => (
                       <li key={cat}>
                         <button
-                          onClick={() => setActiveCategory(cat)}
+                          onClick={() => handleCategoryChange(cat)}
                           className={`text-sm w-full text-left flex items-center justify-between py-1 transition-colors ${
                             activeCategory === cat ? 'text-black font-medium' : 'text-zinc-500 hover:text-black'
                           }`}
@@ -278,29 +292,14 @@ export default function ProductsPage() {
                             Nouveau
                           </div>
                         )}
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id) }}
-                          className="absolute top-4 right-4 z-10 w-9 h-9 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-zinc-700 hover:text-black hover:bg-white transition-colors shadow-sm"
-                          aria-label={has(product.id) ? 'Retirer des likes' : 'Ajouter aux likes'}
-                          title={has(product.id) ? 'Retirer des likes' : 'Ajouter aux likes'}
-                        >
-                          <Heart className={has(product.id) ? 'w-4 h-4 fill-black text-black' : 'w-4 h-4'} />
-                        </button>
                         <img
                           src={product.image}
                           alt={product.name}
                           className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex gap-2">
-                          <button className="flex-1 py-3 bg-white/90 backdrop-blur-md text-black border border-zinc-200 text-sm font-medium rounded-xl hover:bg-black hover:text-white transition-colors">
+                        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                          <button className="w-full py-3 bg-white/90 backdrop-blur-md text-black border border-zinc-200 text-sm font-medium rounded-xl hover:bg-black hover:text-white transition-colors">
                             Voir le produit
-                          </button>
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product) }}
-                            className="py-3 px-3 bg-black text-white text-sm font-medium rounded-xl hover:bg-zinc-800 transition-colors"
-                            title="Ajouter au panier"
-                          >
-                            <ShoppingBag className="w-4 h-4" />
                           </button>
                         </div>
                       </div>

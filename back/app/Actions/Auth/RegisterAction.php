@@ -9,7 +9,7 @@ class RegisterAction
 {
     public function __invoke(array $data): array
     {
-        $user  = User::create([...$data, 'role' => UserRole::User]);
+        $user  = User::create([...$data, 'role' => UserRole::User, 'is_active' => true]);
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
