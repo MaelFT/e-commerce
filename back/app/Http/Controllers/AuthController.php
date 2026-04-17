@@ -46,4 +46,37 @@ class AuthController extends Controller
 
         return response()->json($user);
     }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+            return response()->json(['message' => 'Mot de passe incorrect.'], 422);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Compte supprimé avec succès.']);
+    }
+
+    public function updateAddress(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'shipping_address'     => 'nullable|string|max:255',
+            'shipping_city'        => 'nullable|string|max:100',
+            'shipping_postal_code' => 'nullable|string|max:20',
+            'shipping_country'     => 'nullable|string|max:100',
+            'shipping_phone'       => 'nullable|string|max:30',
+        ]);
+
+        $request->user()->update($validated);
+
+        return response()->json($request->user()->fresh());
+    }
 }

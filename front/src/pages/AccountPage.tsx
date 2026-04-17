@@ -11,12 +11,17 @@ import {
     CheckCircle,
     ChevronRight,
     Loader2,
+    MapPin,
+    Trash2,
+    TriangleAlert,
 } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
 import { ordersApi } from "../api/orders";
 import type { ValidationErrors, Order } from "../types";
+import { useAddressApi, addressFromUser, isAddressEmpty, type SavedAddress } from "../hooks/useAddress";
+import client from "../api/client";
 
-type Tab = "profile" | "orders" | "settings";
+type Tab = "profile" | "orders" | "addresses" | "settings";
 
 interface ProfileForm {
     name: string;
@@ -42,14 +47,15 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function AccountPage() {
-    const { user, logout, updateProfile } = useAuth();
+    const { user, logout, clearSession, updateProfile, refreshUser } = useAuth();
     const { itemCount } = useCart();
+    const { save: saveAddressApi, clear: clearAddressApi } = useAddressApi();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
     const tabFromUrl = searchParams.get("tab") as Tab | null;
     const [activeTab, setActiveTab] = useState<Tab>(
-        tabFromUrl && ["profile", "orders", "settings"].includes(tabFromUrl)
+        tabFromUrl && ["profile", "orders", "addresses", "settings"].includes(tabFromUrl)
             ? tabFromUrl
             : "profile",
     );
@@ -65,6 +71,16 @@ export default function AccountPage() {
     const [errors, setErrors] = useState<ValidationErrors>({});
     const [loading, setLoading] = useState<boolean>(false);
     const [success, setSuccess] = useState<boolean>(false);
+
+    const [addrForm, setAddrForm] = useState<SavedAddress>(() => addressFromUser(user ?? null));
+    const [addrSuccess, setAddrSuccess] = useState(false);
+    const [addrLoading, setAddrLoading] = useState(false);
+    const [addrError,   setAddrError]   = useState<string | null>(null);
+
+    const [deletePassword,  setDeletePassword]  = useState('');
+    const [deleteLoading,   setDeleteLoading]   = useState(false);
+    const [deleteError,     setDeleteError]     = useState<string | null>(null);
+    const [deleteConfirm,   setDeleteConfirm]   = useState(false);
 
     useEffect(() => {
         setOrdersLoading(true);
@@ -145,9 +161,10 @@ export default function AccountPage() {
             .slice(0, 2) ?? "?";
 
     const navItems: { id: Tab; icon: typeof UserIcon; label: string }[] = [
-        { id: "profile", icon: UserIcon, label: "Mon compte" },
-        { id: "orders", icon: Package, label: "Mes commandes" },
-        { id: "settings", icon: Settings, label: "Paramètres" },
+        { id: "profile",   icon: UserIcon, label: "Mon compte" },
+        { id: "orders",    icon: Package,  label: "Mes commandes" },
+        { id: "addresses", icon: MapPin,   label: "Adresses" },
+        { id: "settings",  icon: Settings, label: "Paramètres" },
     ];
 
     return (
@@ -532,6 +549,262 @@ export default function AccountPage() {
                                             })}
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {activeTab === "addresses" && (
+                                <div className="space-y-6">
+                                    {/* Adresse de livraison */}
+                                    <div className="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
+                                                <MapPin className="w-4 h-4 text-black" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-sm font-semibold text-black">
+                                                    Adresse de livraison
+                                                </h2>
+                                                <p className="text-xs text-zinc-400 mt-0.5">
+                                                    Pré-remplie automatiquement lors du paiement
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {addrSuccess && (
+                                            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-6">
+                                                <CheckCircle className="w-4 h-4 shrink-0" />
+                                                Adresse sauvegardée avec succès.
+                                            </div>
+                                        )}
+
+                                        {addrError && (
+                                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 mb-6">
+                                                {addrError}
+                                            </div>
+                                        )}
+
+                                        <form
+                                            onSubmit={async (e) => {
+                                                e.preventDefault();
+                                                setAddrLoading(true);
+                                                setAddrError(null);
+                                                try {
+                                                    const updatedUser = await saveAddressApi(addrForm);
+                                                    await refreshUser?.();
+                                                    setAddrForm(addressFromUser(updatedUser));
+                                                    setAddrSuccess(true);
+                                                    setTimeout(() => setAddrSuccess(false), 3000);
+                                                } catch {
+                                                    setAddrError("Une erreur est survenue. Veuillez réessayer.");
+                                                } finally {
+                                                    setAddrLoading(false);
+                                                }
+                                            }}
+                                            className="space-y-4"
+                                        >
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                                                    Adresse
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={addrForm.address}
+                                                    onChange={(e) => setAddrForm(p => ({ ...p, address: e.target.value }))}
+                                                    placeholder="12 rue de la Paix"
+                                                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                                                        Code postal
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={addrForm.postal_code}
+                                                        onChange={(e) => setAddrForm(p => ({ ...p, postal_code: e.target.value }))}
+                                                        placeholder="75001"
+                                                        className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                                                        Ville
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={addrForm.city}
+                                                        onChange={(e) => setAddrForm(p => ({ ...p, city: e.target.value }))}
+                                                        placeholder="Paris"
+                                                        className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 col-span-2 sm:col-span-1">
+                                                    <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                                                        Pays
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={addrForm.country}
+                                                        onChange={(e) => setAddrForm(p => ({ ...p, country: e.target.value }))}
+                                                        placeholder="France"
+                                                        className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold tracking-wider text-black uppercase">
+                                                    Téléphone
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    value={addrForm.phone}
+                                                    onChange={(e) => setAddrForm(p => ({ ...p, phone: e.target.value }))}
+                                                    placeholder="+33 6 00 00 00 00"
+                                                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black focus:bg-white text-sm transition-colors"
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center justify-between pt-2">
+                                                {!isAddressEmpty(addrForm) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            setAddrLoading(true);
+                                                            setAddrError(null);
+                                                            try {
+                                                                const updatedUser = await clearAddressApi();
+                                                                await refreshUser?.();
+                                                                setAddrForm(addressFromUser(updatedUser));
+                                                                setAddrSuccess(false);
+                                                            } catch {
+                                                                setAddrError("Erreur lors de la suppression.");
+                                                            } finally {
+                                                                setAddrLoading(false);
+                                                            }
+                                                        }}
+                                                        className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Supprimer l'adresse
+                                                    </button>
+                                                )}
+                                                <div className="ml-auto">
+                                                    <button
+                                                        type="submit"
+                                                        disabled={addrLoading}
+                                                        className="px-8 py-3 bg-black text-white text-sm font-medium rounded-xl hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                    >
+                                                        {addrLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                                        Sauvegarder
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+                            {activeTab === "settings" && (
+                                <div className="space-y-6">
+                                    {/* Zone de danger */}
+                                    <div className="bg-white border border-red-200 rounded-2xl p-6 sm:p-8">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                                <TriangleAlert className="w-4 h-4 text-red-500" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-sm font-semibold text-black">
+                                                    Zone de danger
+                                                </h2>
+                                                <p className="text-xs text-zinc-400 mt-0.5">
+                                                    Actions irréversibles sur votre compte
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {!deleteConfirm ? (
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-red-50 border border-red-200 rounded-xl">
+                                                <div>
+                                                    <p className="text-sm font-semibold text-black">
+                                                        Supprimer mon compte
+                                                    </p>
+                                                    <p className="text-xs text-zinc-500 mt-0.5">
+                                                        Toutes vos données seront définitivement effacées.
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setDeleteConfirm(true)}
+                                                    className="shrink-0 px-5 py-2.5 bg-red-500 text-white text-sm font-medium rounded-xl hover:bg-red-600 transition-colors"
+                                                >
+                                                    Supprimer le compte
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="p-5 bg-red-50 border border-red-200 rounded-xl space-y-4">
+                                                <p className="text-sm text-zinc-700">
+                                                    Pour confirmer, saisissez votre mot de passe actuel.
+                                                    Cette action est <strong>irréversible</strong>.
+                                                </p>
+
+                                                {deleteError && (
+                                                    <div className="p-3 bg-white border border-red-300 rounded-lg text-sm text-red-600">
+                                                        {deleteError}
+                                                    </div>
+                                                )}
+
+                                                <input
+                                                    type="password"
+                                                    value={deletePassword}
+                                                    onChange={(e) => setDeletePassword(e.target.value)}
+                                                    placeholder="Mot de passe actuel"
+                                                    className="w-full px-4 py-3 bg-white border border-zinc-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400 text-sm transition-colors"
+                                                />
+
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDeleteConfirm(false);
+                                                            setDeletePassword('');
+                                                            setDeleteError(null);
+                                                        }}
+                                                        className="flex-1 py-2.5 border border-zinc-300 text-sm font-medium rounded-xl hover:bg-zinc-50 transition-colors"
+                                                    >
+                                                        Annuler
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={deleteLoading || !deletePassword}
+                                                        onClick={async () => {
+                                                            setDeleteLoading(true);
+                                                            setDeleteError(null);
+                                                            try {
+                                                                await client.delete('/auth/account', {
+                                                                    data: { password: deletePassword },
+                                                                });
+                                                                // Le compte est supprimé → ne pas rappeler l'API logout
+                                                                // (le token est déjà révoqué côté serveur)
+                                                                clearSession();
+                                                                navigate('/');
+                                                            } catch (err: any) {
+                                                                setDeleteError(
+                                                                    err?.message ?? 'Une erreur est survenue.'
+                                                                );
+                                                            } finally {
+                                                                setDeleteLoading(false);
+                                                            }
+                                                        }}
+                                                        className="flex-1 py-2.5 bg-red-500 text-white text-sm font-medium rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                    >
+                                                        {deleteLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                                        Confirmer la suppression
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </main>

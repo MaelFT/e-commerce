@@ -8,7 +8,9 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<AuthResponse>
   register: (credentials: RegisterCredentials) => Promise<AuthResponse>
   logout: () => Promise<void>
+  clearSession: () => void
   updateProfile: (credentials: UpdateProfileCredentials) => Promise<User>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -49,14 +51,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  const clearSession = (): void => {
+    localStorage.removeItem('token')
+    setUser(null)
+  }
+
   const updateProfile = async (credentials: UpdateProfileCredentials): Promise<User> => {
     const updated = await authApi.updateProfile(credentials)
     setUser(updated)
     return updated
   }
 
+  const refreshUser = async (): Promise<void> => {
+    const updated = await authApi.me()
+    setUser(updated)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, clearSession, updateProfile, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

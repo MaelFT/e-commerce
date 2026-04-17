@@ -6,6 +6,11 @@ export interface User {
   email_verified_at: string | null
   created_at: string
   updated_at: string
+  shipping_address:     string | null
+  shipping_city:        string | null
+  shipping_postal_code: string | null
+  shipping_country:     string | null
+  shipping_phone:       string | null
 }
 
 export interface AuthResponse {
