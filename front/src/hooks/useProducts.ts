@@ -22,8 +22,6 @@ export function useProducts(filters: ProductFilters = {}): UseProductsReturn {
     productsApi
       .list(filters)
       .then((res) => {
-        // Laravel pagination shape: { data: Product[], ... }
-        // If the API/proxy returns an unexpected payload, avoid crashing the UI.
         const maybeData = (res as any)?.data
         if (Array.isArray(maybeData)) {
           setProducts(maybeData)

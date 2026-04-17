@@ -14,8 +14,16 @@ class AdminSeeder extends Seeder
             ['email' => 'admin@amazone.fr'],
             [
                 'name'     => 'Administrateur',
-                'password' => 'admin1234',
+                'password' => 'password123',
                 'role'     => UserRole::Admin,
+            ]
+        );
+        User::updateOrCreate(
+            ['email' => 'test@test.fr'],
+            [
+                'name'     => 'Utilisateur',
+                'password' => 'password123',
+                'role'     => UserRole::User,
             ]
         );
     }
