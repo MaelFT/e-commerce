@@ -21,6 +21,13 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: password
       FRONTEND_URL: http://localhost:5173
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USERNAME: null
+      MAIL_PASSWORD: null
+      MAIL_FROM_ADDRESS: "noreply@amazone.fr"
+      MAIL_FROM_NAME: "Amazone"
     command: >
       sh -lc "
         if [ ! -f /var/www/html/.env ]; then cp /var/www/html/.env.example /var/www/html/.env; fi;
@@ -32,6 +39,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   nginx:
     image: nginx:alpine
@@ -64,6 +73,16 @@ services:
       - ecommerce-network
     depends_on:
       - nginx
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ecommerce-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - ecommerce-network
 
   postgres:
     image: postgres:16-alpine
